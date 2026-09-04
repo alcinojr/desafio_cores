@@ -1,0 +1,27 @@
+DESAFIO DAS CORES - PWA
+
+Arquivos:
+- index.html
+- manifest.json
+- service-worker.js
+- icon-192.png
+- icon-512.png
+
+O que esta versão faz:
+- Instala no Android como aplicativo.
+- Abre em tela cheia e horizontal.
+- Funciona offline após a primeira abertura.
+- Usa apenas VERMELHO, VERDE, AZUL, AMARELO, BRANCO, PRETO e ROSA.
+- Gera nova sequência aleatória em cada execução.
+- Evita repetições imediatas.
+- Aproximadamente 20% das telas têm texto e cor iguais.
+
+IMPORTANTE:
+Para instalar como PWA, os arquivos precisam estar hospedados em HTTPS
+(ou localhost durante testes).
+
+Depois de hospedado:
+1. Abra o endereço no Chrome do Android.
+2. O navegador poderá mostrar "Instalar aplicativo" ou "Adicionar à tela inicial".
+3. Instale.
+4. Depois ele poderá abrir pelo ícone e funcionar offline.

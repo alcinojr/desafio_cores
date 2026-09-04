@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#47474c" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" />
+  <title>Desafio das Cores</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #47474c;
+      font-family: Arial, Helvetica, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    #word {
+      font-weight: 800;
+      font-size: clamp(64px, 15vw, 220px);
+      line-height: 1;
+      padding: 20px;
+      max-width: 95vw;
+      word-break: break-word;
+    }
+
+    #intro {
+      color: white;
+      padding: 24px;
+      max-width: 1000px;
+    }
+
+    #intro h1 {
+      margin: 0 0 24px;
+      font-size: clamp(40px, 7vw, 90px);
+    }
+
+    #intro p {
+      font-size: clamp(22px, 3.4vw, 42px);
+      line-height: 1.35;
+    }
+
+    #intro small {
+      display: block;
+      margin-top: 26px;
+      font-size: clamp(18px, 2.3vw, 28px);
+      opacity: .8;
+    }
+
+    #round {
+      position: absolute;
+      top: 14px;
+      right: 20px;
+      color: rgba(255,255,255,.28);
+      font-size: 18px;
+    }
+
+    #installBtn {
+      position: absolute;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      display: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 22px;
+      font-size: 20px;
+      font-weight: 700;
+      background: white;
+      color: #222;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="intro">
+      <h1>DESAFIO DAS CORES</h1>
+      <p>Diga a <strong>COR</strong> em que a palavra aparece.<br>Não diga o que está escrito.</p>
+      <small>TOQUE NA TELA PARA COMEÇAR</small>
+    </div>
+    <div id="word" style="display:none;"></div>
+    <div id="round"></div>
+    <button id="installBtn">Instalar aplicativo</button>
+  </div>
+
+  <script>
+    const CORES = {
+      VERMELHO: "#f20f0f",
+      VERDE: "#0dcc2e",
+      AZUL: "#0d4cff",
+      AMARELO: "#ffe600",
+      BRANCO: "#ffffff",
+      PRETO: "#000000",
+      ROSA: "#ff2f93"
+    };
+
+    const nomes = Object.keys(CORES);
+    let rodada = 0;
+    let ultimaPalavra = null;
+    let ultimaCor = null;
+    let penultimaPalavra = null;
+    let penultimaCor = null;
+    const chanceIgual = 0.20;
+
+    const app = document.getElementById("app");
+    const intro = document.getElementById("intro");
+    const word = document.getElementById("word");
+    const round = document.getElementById("round");
+    const installBtn = document.getElementById("installBtn");
+
+    function escolha(arr) {
+      const valores = new Uint32Array(1);
+      crypto.getRandomValues(valores);
+      return arr[valores[0] % arr.length];
+    }
+
+    function aleatorio01() {
+      const valores = new Uint32Array(1);
+      crypto.getRandomValues(valores);
+      return valores[0] / 4294967295;
+    }
+
+    function proxima() {
+      intro.style.display = "none";
+      word.style.display = "block";
+
+      rodada++;
+
+      const possiveisTexto = nomes.filter(n => n !== ultimaPalavra);
+      const texto = escolha(possiveisTexto);
+
+      const igual = aleatorio01() < chanceIgual;
+      let corNome;
+
+      if (igual) {
+        corNome = texto;
+      } else {
+        let possiveisCor = nomes.filter(n => n !== texto && n !== ultimaCor);
+        corNome = escolha(possiveisCor);
+
+        if (texto === penultimaPalavra && corNome === penultimaCor) {
+          const alternativas = nomes.filter(
+            n => n !== texto && n !== ultimaCor && n !== corNome
+          );
+          if (alternativas.length) {
+            corNome = escolha(alternativas);
+          }
+        }
+      }
+
+      penultimaPalavra = ultimaPalavra;
+      penultimaCor = ultimaCor;
+      ultimaPalavra = texto;
+      ultimaCor = corNome;
+
+      word.textContent = texto;
+      word.style.color = CORES[corNome];
+      round.textContent = rodada;
+    }
+
+    app.addEventListener("click", (e) => {
+      if (e.target === installBtn) return;
+      proxima();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        proxima();
+      }
+    });
+
+    let deferredPrompt = null;
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = "block";
+    });
+
+    installBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = "none";
+    });
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js");
+      });
+    }
+  </script>
+</body>
+</html>
